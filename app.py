@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Los costes de tus hábitos", layout="centered")
+st.set_page_config(page_title="The Real Cost", layout="centered")
 
-st.title("🧮 Calculadora de costes reales de hábitos")
-st.markdown("Descubre el impacto acumulado de decisiones pequeñas en tu tiempo, dinero o energía.")
+st.title("El coste de tus hábitos")
+st.markdown("Descubre el impacto acumulado de pequeños gastos, hábitos o elecciones cotidianas")
 
 def obtener_unidad(tipo):
     if "Dinero" in tipo:
@@ -19,38 +19,79 @@ def obtener_unidad(tipo):
 
 st.subheader("Introduce los detalles:")
 
-# Formulario a rellenar por el usuario
-with st.form("hábito_formulario"):
+with st.form("formulario_coste"):
     nombre = st.text_input("¿Qué estás calculando?", placeholder="Ej. Café de máquina")
     tipo = st.selectbox("¿A cambio de qué?", ["Dinero (€)", "Tiempo (minutos)", "Energía mental"])
-    
-    if "Dinero" in tipo:
-        freq_label = "¿Cuántas unidades compras o consumes al día?"
-    elif "Tiempo" in tipo:
-        freq_label = "¿Cuántas veces haces esto al día?"
-    else:
-        freq_label = "¿Con qué frecuencia al día ocurre esto?"
 
-    frecuencia = st.number_input("¿Cuántas veces lo haces al día?", min_value=0, step=1, format="%d")
-    coste_unitario = st.number_input("Coste por vez (en la unidad seleccionada)", min_value=0.0, step=0.1)
+    if "Dinero" in tipo:
+        freq_label = "¿Cuántas unidades compras o consumes?"
+    elif "Tiempo" in tipo:
+        freq_label = "¿Cuántas veces haces esto?"
+    else:
+        freq_label = "¿Con qué frecuencia ocurre esto?"
+
+    frecuencia = st.number_input(freq_label, min_value=0, step=1, format="%d")
+
+    frecuencia_tipo = st.selectbox(
+        "¿Con qué frecuencia ocurre?",
+        ["a diario", "semanalmente", "menusualmente", "anualmente"]
+    )
+
+    coste_unitario = st.number_input("¿Cuánto cuesta cada vez?", min_value=0.0, step=0.1)
+
     duración = st.selectbox("¿Durante cuánto tiempo quieres calcularlo?", ["1 semana", "1 mes", "1 año", "5 años"])
+
     enviar = st.form_submit_button("Calcular")
 
-# Procesamiento de la información para la devolución de resultados
+# Nota y explicación del modelo de cálculo
+st.caption("📌 Calculamos con medias exactas: 30,42 días por mes, 52 semanas por año...")
+
+with st.expander("ℹ️ ¿Cómo se calculan los periodos?"):
+    st.markdown("""
+Usamos medias exactas en lugar de redondeos para que los resultados sean más realistas:
+
+- 1 año tiene **365 días**, que son **52,14 semanas**
+- 1 mes tiene **365 / 12 ≈ 30,42 días**
+- Por tanto, 1 mes equivale a **~4,35 semanas**
+- Esto evita errores acumulados en cálculos anuales o a largo plazo
+""")
+
 if enviar:
     unidad = obtener_unidad(tipo)
 
-    periodos = {
-        "1 semana": 7,
-        "1 mes": 30,
-        "1 año": 365,
-        "5 años": 365 * 5
+    # Frecuencias reales por periodo
+    factor_periodo = {
+        "1 semana": {
+            "al día": 7,
+            "a la semana": 1,
+            "al mes": 1 / 4.35,
+            "al año": 1 / 52.14
+        },
+        "1 mes": {
+            "al día": 30.42,
+            "a la semana": 4.35,
+            "al mes": 1,
+            "al año": 1 / 12
+        },
+        "1 año": {
+            "al día": 365,
+            "a la semana": 52.14,
+            "al mes": 12,
+            "al año": 1
+        },
+        "5 años": {
+            "al día": 365 * 5,
+            "a la semana": 52.14 * 5,
+            "al mes": 12 * 5,
+            "al año": 5
+        }
     }
 
-    resultados = {
-        periodo: frecuencia * coste_unitario * días
-        for periodo, días in periodos.items()
-    }
+    resultados = {}
+    for periodo in ["1 semana", "1 mes", "1 año", "5 años"]:
+        ocurrencias = frecuencia * factor_periodo[periodo][frecuencia_tipo]
+        total = ocurrencias * coste_unitario
+        resultados[periodo] = total
 
     st.subheader(f"📊 Resultados para: **{nombre}**")
 
@@ -72,7 +113,7 @@ if enviar:
         st.subheader("💡 ¿Qué podrías haber hecho con ese tiempo?")
         horas = resultados["1 año"] / 60
         libros = int(horas / 6)
-        st.write(f"📚 Leer unos {libros} libros al año (a una media de 6h por libro)")
+        st.write(f"📚 Leer unos {libros} libros al año (suponiendo 6h por libro)")
         st.write(f"🧘 Pasar {horas:.1f} horas en autocuidado")
 
     st.subheader("📈 Evolución acumulada")
