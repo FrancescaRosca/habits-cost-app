@@ -88,7 +88,7 @@ if enviar:
     }
 
     resultados = {}
-    for periodo in ["1 semana", "1 mes", "1 año", "5 años"]:
+    for periodo in ["a diario", "semanalmente", "menusualmente", "anualmente"]:
         ocurrencias = frecuencia * factor_periodo[periodo][frecuencia_tipo]
         total = ocurrencias * coste_unitario
         resultados[periodo] = total
