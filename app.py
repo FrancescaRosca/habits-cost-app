@@ -32,10 +32,20 @@ with st.form("formulario_coste"):
 
     frecuencia = st.number_input(freq_label, min_value=0, step=1, format="%d")
 
+    # Diccionario para mostrar etiquetas bonitas
+    frecuencia_map = {
+        "al día": "a diario",
+        "a la semana": "semanalmente",
+        "al mes": "mensualmente",
+        "al año": "anualmente"
+    }
+
     frecuencia_tipo = st.selectbox(
         "¿Con qué frecuencia ocurre?",
-        ["a diario", "semanalmente", "menusualmente", "anualmente"]
+        options=list(frecuencia_map.keys()),
+        format_func=lambda x: frecuencia_map[x]
     )
+
 
     coste_unitario = st.number_input("¿Cuánto cuesta cada vez?", min_value=0.0, step=0.1)
 
@@ -88,7 +98,7 @@ if enviar:
     }
 
     resultados = {}
-    for periodo in ["a diario", "semanalmente", "menusualmente", "anualmente"]:
+    for periodo in ["1 semana", "1 mes", "1 año", "5 años"]:
         ocurrencias = frecuencia * factor_periodo[periodo][frecuencia_tipo]
         total = ocurrencias * coste_unitario
         resultados[periodo] = total
